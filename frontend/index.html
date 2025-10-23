@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LPI Abata Leaders</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #000; 
+            color: #fff; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { 
+            max-width: 500px; 
+            margin: 0 auto; 
+            text-align: center;
+        }
+        .logo { 
+            width: 100px; 
+            height: 100px; 
+            border-radius: 50%; 
+            margin: 20px auto;
+            border: 3px solid #333;
+        }
+        h1 { 
+            font-size: 24px; 
+            margin: 10px 0; 
+            color: #fff;
+        }
+        h2 { 
+            font-size: 16px; 
+            color: #ccc; 
+            margin-bottom: 30px;
+            font-weight: normal;
+        }
+        .card {
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            margin: 15px 0;
+            border: 1px solid #333;
+        }
+        .card-img {
+            width: 100%;
+            height: 150px;
+            background: #e6e6e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+        }
+        .card-footer {
+            background: #212121;
+            padding: 15px;
+            color: #fff;
+            font-size: 16px;
+        }
+        .status {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .footer {
+            margin-top: 30px;
+            color: #666;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img class="logo" src="https://i.imgur.com/q0lH38R.png" alt="LPI Abata">
+        <h1>LPI Abata Leaders</h1>
+        <h2>Division of Operations — We serve you better.</h2>
+        
+        <div id="status" class="status">
+            Testing backend connection...
+        </div>
+
+        <div id="menu"></div>
+
+        <div class="footer">
+            Copyright © 2025 • Backend Connected ✅
+        </div>
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                // Test backend connection
+                const healthResponse = await fetch('/api/health');
+                const healthData = await healthResponse.json();
+                
+                document.getElementById('status').innerHTML = 
+                    `Backend Status: <span class="success">${healthData.status}</span> • Database: <span class="success">${healthData.database}</span>`;
+
+                // Load menu data
+                const menuResponse = await fetch('/api/menu');
+                const menuData = await menuResponse.json();
+                
+                if (menuData.success) {
+                    let menuHTML = '';
+                    menuData.data.forEach(item => {
+                        menuHTML += `
+                            <div class="card">
+                                <div class="card-img">
+                                    <img src="${item.banner}" alt="${item.nama}" style="width:100%;height:100%;object-fit:cover;" 
+                                         onerror="this.style.display='none'; this.parentElement.innerHTML='Banner Image';">
+                                </div>
+                                <div class="card-footer">${item.nama}</div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('menu').innerHTML = menuHTML;
+                }
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    `Backend Status: <span class="error">Not Connected</span> • Using demo data`;
+                
+                // Fallback demo data
+                const demoData = [
+                    { nama: 'Jadwalkan Perjalanan', banner: '' },
+                    { nama: 'Ustadz/ah Disini', banner: '' },
+                    { nama: 'Book a Driver', banner: '' }
+                ];
+                
+                let menuHTML = '';
+                demoData.forEach(item => {
+                    menuHTML += `
+                        <div class="card">
+                            <div class="card-img">Banner Image</div>
+                            <div class="card-footer">${item.nama}</div>
+                        </div>
+                    `;
+                });
+                document.getElementById('menu').innerHTML = menuHTML;
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
