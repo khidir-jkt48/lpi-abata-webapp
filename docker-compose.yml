@@ -1,65 +1,52 @@
 version: '3.8'
 
 services:
+  frontend:
+    build: ./frontend
+    # HAPUS ports:80 - akan dihandle oleh NPM
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=/api
+    networks:
+      - lpi-npm-network  # Network yang sama dengan NPM
+    container_name: lpi_abata_frontend
+
+  backend:
+    build: ./backend
+    ports:
+      - "5001:5001"  # Biarkan untuk development access
+    environment:
+      - DB_HOST=database
+      - DB_USER=lpi_user
+      - DB_PASSWORD=AbataSecure123!
+      - DB_NAME=menu_app
+      - DB_PORT=5432
+      - PORT=5001
+    depends_on:
+      - database
+    networks:
+      - lpi-npm-network  # Network yang sama
+    container_name: lpi_abata_backend
+
   database:
     image: postgres:15-alpine
-    container_name: lpi_abata_db
-    restart: unless-stopped
     environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      - POSTGRES_DB=menu_app
+      - POSTGRES_USER=lpi_user
+      - POSTGRES_PASSWORD=AbataSecure123!
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - lpi_network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    build: 
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: lpi_abata_backend
-    restart: unless-stopped
-    environment:
-      NODE_ENV: ${NODE_ENV}
-      PORT: ${BACKEND_PORT}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5001:5001"  # ✅ EXPOSE PORT KE HOST
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - lpi_network
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: lpi_abata_frontend
-    restart: unless-stopped
-    ports:
-      - "80:80"
-    volumes:
-     - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-    depends_on:
-      - backend
-    networks:
-      - lpi_network
+      - lpi-npm-network  # Network yang sama
+    container_name: lpi_abata_database
 
 volumes:
   postgres_data:
 
 networks:
-  lpi_network:
-    driver: bridge
+  lpi-npm-network:
+    external: true  # Gunakan network external

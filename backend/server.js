@@ -9,17 +9,16 @@ const port = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
-console.log('🚀 Starting LPI Abata Backend...');
-
 // Database configuration
 const dbConfig = {
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST || 'database',
+  port: process.env.DB_PORT || 5432,
+  database: process.env.DB_NAME || 'menu_app',
+  user: process.env.DB_USER || 'lpi_user',
+  password: process.env.DB_PASSWORD || 'AbataSecure123!',
 };
 
+console.log('🚀 Starting LPI Abata Backend...');
 console.log('📍 Database Config:', {
   host: dbConfig.host,
   database: dbConfig.database,
@@ -46,15 +45,15 @@ const initializeDatabase = async () => {
     
   } catch (error) {
     console.log('❌ Database connection failed:', error.message);
+    console.log('🔄 Continuing with static data mode...');
     dbConnected = false;
   }
 };
 
 // Health check endpoint
 app.get('/health', async (req, res) => {
-  console.log('🏥 Health check requested');
-  if (dbConnected) {
-    try {
+  try {
+    if (dbConnected) {
       await pool.query('SELECT 1');
       res.json({
         status: 'OK',
@@ -62,44 +61,73 @@ app.get('/health', async (req, res) => {
         database: 'connected',
         timestamp: new Date().toISOString()
       });
-    } catch (error) {
-      res.status(503).json({
-        status: 'ERROR',
-        message: 'Database connection lost',
+    } else {
+      res.json({
+        status: 'OK',
+        message: 'Backend is running (database not connected)',
+        database: 'disconnected', 
         timestamp: new Date().toISOString()
       });
     }
-  } else {
+  } catch (error) {
     res.json({
       status: 'OK',
-      message: 'Backend is running (database not connected)',
-      database: 'disconnected',
+      message: 'Backend running in fallback mode',
+      database: 'error',
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// API health endpoint - FIXED: Hapus app.request yang error
+app.get('/api/health', async (req, res) => {
+  try {
+    if (dbConnected) {
+      await pool.query('SELECT 1');
+      res.json({
+        status: 'OK',
+        message: 'Backend and database are healthy - API Endpoint',
+        database: 'connected',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      res.json({
+        status: 'OK', 
+        message: 'Backend is running (database not connected) - API Endpoint',
+        database: 'disconnected',
+        timestamp: new Date().toISOString()
+      });
+    }
+  } catch (error) {
+    res.json({
+      status: 'OK',
+      message: 'Backend running in fallback mode - API Endpoint',
+      database: 'error',
       timestamp: new Date().toISOString()
     });
   }
 });
 
 // Menu endpoint
-app.get('/menu', async (req, res) => {
-  console.log('📝 Menu data requested');
-  if (dbConnected) {
-    try {
+app.get('/api/menu', async (req, res) => {
+  try {
+    if (dbConnected) {
       const result = await pool.query(`
         SELECT id, nama, link, banner, icon 
         FROM menu 
         ORDER BY id
       `);
       
-      res.json({
+      return res.json({
         success: true,
         data: result.rows,
         count: result.rows.length,
         source: 'database'
       });
-    } catch (error) {
-      console.log('Database query failed:', error.message);
-      // Fall through to static data
     }
+  } catch (error) {
+    console.log('Database query failed, using static data:', error.message);
   }
 
   // Static fallback data
@@ -117,6 +145,13 @@ app.get('/menu', async (req, res) => {
       link: '#',
       banner: 'https://images.unsplash.com/photo-1580477667995-2b94f01c9516?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80',
       icon: ''
+    },
+    {
+      id: 3,
+      nama: 'Book a Driver',
+      link: '#',
+      banner: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80',
+      icon: ''
     }
   ];
 
@@ -128,34 +163,48 @@ app.get('/menu', async (req, res) => {
   });
 });
 
-// ✅ FIXED: API endpoints untuk nginx proxy
-app.get('/api/health', async (req, res) => {
-  console.log('🔧 API Health check requested');
-  // Panggil health endpoint utama
-  const healthResponse = await app._router.handle({ url: '/health', method: 'GET' });
-  res.json({
-    status: 'OK',
-    message: 'API Health check',
-    timestamp: new Date().toISOString(),
-    database: dbConnected ? 'connected' : 'disconnected'
-  });
-});
+// Direct menu endpoint (without /api)
+app.get('/menu', async (req, res) => {
+  try {
+    if (dbConnected) {
+      const result = await pool.query(`
+        SELECT id, nama, link, banner, icon 
+        FROM menu 
+        ORDER BY id
+      `);
+      
+      return res.json({
+        success: true,
+        data: result.rows,
+        count: result.rows.length,
+        source: 'database'
+      });
+    }
+  } catch (error) {
+    console.log('Database query failed, using static data:', error.message);
+  }
 
-app.get('/api/menu', async (req, res) => {
-  console.log('🔧 API Menu requested');
-  // Redirect ke menu endpoint utama
-  const menuResponse = await app._router.handle({ url: '/menu', method: 'GET' });
+  // Static fallback data
+  const staticData = [
+    {
+      id: 1,
+      nama: 'Jadwalkan Perjalanan',
+      link: '#',
+      banner: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80',
+      icon: ''
+    }
+  ];
+
   res.json({
     success: true,
-    data: menuResponse.data || [],
-    count: menuResponse.count || 0,
-    source: 'api_proxy'
+    data: staticData,
+    count: staticData.length,
+    source: 'static'
   });
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
-  console.log('🏠 Root endpoint requested');
   res.json({
     message: 'LPI Abata Backend API',
     version: '1.0.0',
@@ -164,19 +213,17 @@ app.get('/', (req, res) => {
       menu: '/menu',
       api_health: '/api/health',
       api_menu: '/api/menu'
-    },
-    timestamp: new Date().toISOString()
+    }
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
-  console.log(`❌ 404 - Route not found: ${req.method} ${req.originalUrl}`);
-  res.status(404).json({
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
     success: false,
-    message: 'Endpoint not found',
-    requested_url: req.originalUrl,
-    available_endpoints: ['/', '/health', '/menu', '/api/health', '/api/menu']
+    error: 'Internal server error',
+    message: err.message
   });
 });
 
@@ -187,11 +234,20 @@ const startServer = async () => {
   app.listen(port, '0.0.0.0', () => {
     console.log(`✅ LPI Abata Backend running on port ${port}`);
     console.log(`📍 Health: http://localhost:${port}/health`);
-    console.log(`📍 Menu: http://localhost:${port}/menu`);
     console.log(`📍 API Health: http://localhost:${port}/api/health`);
+    console.log(`📍 Menu: http://localhost:${port}/menu`);
     console.log(`📍 API Menu: http://localhost:${port}/api/menu`);
     console.log(`📊 Database: ${dbConnected ? 'Connected ✅' : 'Disconnected 🔄'}`);
   });
 };
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 startServer().catch(console.error);

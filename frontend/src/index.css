@@ -1,23 +1,39 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset dan base styles */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
 
 body {
   margin: 0;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #000000;
+  background: #000000;
   color: #222;
   padding: 24px 12px;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
-/* Header */
+/* Container utama */
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Styles */
 .header {
   text-align: center;
   margin-bottom: 18px;
+  flex-shrink: 0;
 }
 
 .logo {
@@ -26,12 +42,16 @@ body {
   border-radius: 50%;
   display: block;
   margin: 10px auto 20px auto;
+  object-fit: cover;
+  border: 2px solid #333;
 }
 
 .header h1 {
   margin: 6px 0;
   font-size: 22px;
   color: #ffffff;
+  font-weight: normal;
+  letter-spacing: 0.3px;
 }
 
 .header h2 {
@@ -40,9 +60,10 @@ body {
   font-size: 18px;
   color: #ffffff;
   font-weight: 400;
+  line-height: 1.4;
 }
 
-/* Menu */
+/* Menu Container */
 .menu {
   width: 100%;
   max-width: 500px;
@@ -50,9 +71,10 @@ body {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  flex: 1;
 }
 
-/* Card */
+/* Card Styles */
 .card {
   display: flex;
   flex-direction: column;
@@ -61,20 +83,30 @@ body {
   box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   background: #000000;
   width: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-link {
   display: block;
   text-decoration: none;
   color: inherit;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
+.card:active {
+  transform: scale(0.98);
+}
+
+/* Image Wrapper */
 .image-wrapper {
   width: 100%;
   overflow: hidden;
   background: #e6e6e6;
   flex-shrink: 0;
   height: 270px;
+  position: relative;
 }
 
 .card-img {
@@ -82,8 +114,14 @@ body {
   height: 100%;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s ease;
 }
 
+.card-link:hover .card-img {
+  transform: scale(1.05);
+}
+
+/* Footer Area */
 .card-footer {
   background: #212121;
   display: flex;
@@ -96,12 +134,69 @@ body {
   min-height: 80px;
 }
 
+.footer-icon-wrap {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  overflow: hidden;
+}
+
+.footer-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
 .footer-title {
   color: #fff;
   font-size: 18px;
   text-align: center;
   letter-spacing: 0.2px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 10px;
+  font-weight: 500;
+}
+
+/* Loading, Error, dan Empty States */
+.loading-container,
+.error-container {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.retry-button {
+  background: #1a73e8;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.retry-button:active {
+  background: #1557b0;
+  transform: scale(0.95);
+}
+
+.no-menu-text {
+  color: #ccc;
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 16px;
 }
 
 /* Footer */
@@ -110,10 +205,234 @@ body {
   color: #999;
   margin-top: 22px;
   font-size: 13px;
+  padding: 20px 0;
+  flex-shrink: 0;
 }
 
-/* Responsive */
+/* Responsive Design untuk Mobile */
 @media (max-width: 480px) {
-  .image-wrapper { height: 150px; }
-  .footer-title { font-size: 16px; padding: 0 10px; }
+  body {
+    padding: 16px 8px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .logo {
+    width: 90px;
+    height: 90px;
+    margin: 5px auto 15px auto;
+  }
+
+  .header h1 {
+    font-size: 20px;
+    margin: 4px 0;
+  }
+
+  .header h2 {
+    font-size: 16px;
+    margin-bottom: 30px;
+    padding: 0 10px;
+  }
+
+  .menu {
+    gap: 16px;
+    max-width: 100%;
+  }
+
+  .image-wrapper {
+    height: 240px;
+  }
+
+  .card-footer {
+    padding: 14px;
+    min-height: 60px;
+  }
+
+  .footer-title {
+    font-size: 16px;
+    padding: 0 8px;
+  }
+
+  .footer-icon-wrap {
+    left: 16px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .footer-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Improve touch targets */
+  .card {
+    border-radius: 16px;
+  }
+
+  .card-footer {
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 320px) {
+  body {
+    padding: 12px 6px;
+  }
+
+  .logo {
+    width: 80px;
+    height: 80px;
+  }
+
+  .header h1 {
+    font-size: 18px;
+  }
+
+  .header h2 {
+    font-size: 14px;
+    margin-bottom: 25px;
+  }
+
+  .image-wrapper {
+    height: 160px;
+  }
+
+  .footer-title {
+    font-size: 15px;
+  }
+}
+
+/* Landscape orientation improvements */
+@media (max-height: 500px) and (orientation: landscape) {
+  .header {
+    margin-bottom: 12px;
+  }
+
+  .logo {
+    width: 70px;
+    height: 70px;
+    margin: 5px auto 10px auto;
+  }
+
+  .header h1 {
+    font-size: 18px;
+    margin: 2px 0;
+  }
+
+  .header h2 {
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+
+  .menu {
+    gap: 12px;
+  }
+
+  .image-wrapper {
+    height: 140px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #000000;
+  }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card-img,
+  .retry-button {
+    transition: none;
+  }
+}
+
+/* Safe area support for notched devices */
+@supports(padding: max(0px)) {
+  body {
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-top: max(24px, env(safe-area-inset-top));
+  }
+}
+
+/* Tambahkan di akhir file src/index.css */
+
+/* Demo Mode Indicators */
+.demo-indicator {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.demo-badge {
+  background: #f59e0b;
+  color: #000;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.demo-warning {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.warning-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.warning-text {
+  color: #92400e;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.demo-footer {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+/* Retry Button Styles */
+.retry-button, .demo-button {
+  min-width: 160px;
+  transition: all 0.2s ease;
+}
+
+.retry-button:active, .demo-button:active {
+  transform: scale(0.95);
+}
+
+/* Responsive improvements untuk error state */
+@media (max-width: 480px) {
+  .demo-warning {
+    flex-direction: column;
+    text-align: center;
+    gap: 8px;
+  }
+  
+  .warning-icon {
+    font-size: 16px;
+  }
+  
+  .warning-text {
+    font-size: 13px;
+  }
+  
+  .retry-button, .demo-button {
+    min-width: 140px;
+    padding: 10px 20px;
+    font-size: 14px;
+  }
 }

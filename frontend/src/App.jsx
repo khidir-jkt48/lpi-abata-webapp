@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
+import { menuAPI } from './services/api';
 
+// Komponen Card untuk menampilkan menu
 const MenuCard = ({ menu }) => {
   const placeholderSvg = `data:image/svg+xml,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700">
-      <rect width="100%" height="100%" fill="#f0f0f0"/>
+      <rect width="100%" height="100%" fill="#dcdcdc"/>
       <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
-            fill="#999" font-family="Arial" font-size="20">Image Holder</text>
+            fill="#b0b0b0" font-family="Arial" font-size="20">&lt;Image Holder&gt;</text>
     </svg>
   `)}`;
 
   const bannerSrc = menu.banner || placeholderSvg;
   const hasLink = menu.link && menu.link.trim() !== '';
+  const hasIcon = menu.icon && menu.icon.trim() !== '';
 
   const CardContent = () => (
     <div className="card">
@@ -22,9 +25,26 @@ const MenuCard = ({ menu }) => {
           onError={(e) => {
             e.target.src = placeholderSvg;
           }}
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center'
+          }}
         />
       </div>
       <div className="card-footer">
+        {hasIcon && (
+          <div className="footer-icon-wrap">
+            <img 
+              className="footer-icon" 
+              src={menu.icon} 
+              alt={`Icon ${menu.nama}`}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.style.display = 'none';
+              }}
+            />
+          </div>
+        )}
         <div className="footer-title">{menu.nama}</div>
       </div>
     </div>
@@ -32,7 +52,12 @@ const MenuCard = ({ menu }) => {
 
   if (hasLink) {
     return (
-      <a className="card-link" href={menu.link} target="_blank" rel="noopener noreferrer">
+      <a 
+        className="card-link" 
+        href={menu.link} 
+        target="_blank" 
+        rel="noopener noreferrer"
+      >
         <CardContent />
       </a>
     );
@@ -41,145 +66,162 @@ const MenuCard = ({ menu }) => {
   return <CardContent />;
 };
 
+// Loading Component
+const LoadingSpinner = () => (
+  <div className="loading-container">
+    <div className="text-white text-center py-8">Loading...</div>
+  </div>
+);
+
+// Error Component dengan fallback option
+const ErrorMessage = ({ message, onRetry, onUseDemo }) => (
+  <div className="error-container text-center py-8">
+    <div className="text-red-400 mb-4 text-lg">{message}</div>
+    <div className="flex flex-col gap-3 justify-center items-center">
+      <button
+        onClick={onRetry}
+        className="retry-button bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg transition-colors font-medium"
+      >
+        🔄 Coba Lagi
+      </button>
+      <button
+        onClick={onUseDemo}
+        className="demo-button bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg transition-colors font-medium text-sm"
+      >
+        🎯 Gunakan Data Demo
+      </button>
+      <div className="text-gray-400 text-xs mt-2">
+        Pastikan backend berjalan di port 5001
+      </div>
+    </div>
+  </div>
+);
+
+// Data demo untuk fallback
+const demoData = [
+  {
+    id: 1,
+    nama: 'Book a Driver',
+    link: 'https://script.google.com/a/macros/abata.sch.id/s/AKfycbwd0Zrt7UBoy8qpiBNoDscCZ9YCKnbuzusx5FPCyyLcfNk44DJA9CV1LeGHyEPLmS50tg/exec',
+    banner: 'https://imgur.com/gvv6T20.png',
+    icon: ''
+  },
+  {
+    id: 2,
+    nama: 'Book a Room',
+    link: 'https://script.google.com/macros/s/AKfycbwx0qq4oqO8QSxDxWAJ0HMPIq6US4ZVRFuniCXNIo8hy1QsBawzIl5euyxXSPVE-Ckg8g/exec',
+    banner: 'https://i.imgur.com/SiZi6hm.png',
+    icon: ''
+  },
+];
+
+// Komponen utama App
 function App() {
   const [menuData, setMenuData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [apiSource, setApiSource] = useState('');
+  const [usingDemo, setUsingDemo] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      console.log('🔄 Fetching data from backend...');
+      
+      // Test koneksi backend dulu
+      try {
+        await menuAPI.healthCheck();
+        console.log('✅ Backend is reachable');
+      } catch (healthError) {
+        console.error('❌ Backend health check failed:', healthError);
+        throw new Error(`Backend tidak dapat diakses di http://localhost:5001`);
+      }
+      
+      // Fetch menu data
+      const menuResponse = await menuAPI.getMenu();
+      setMenuData(menuResponse.data);
+      setUsingDemo(false);
+      console.log(`✅ Loaded ${menuResponse.data.length} menu items from backend`);
+      
+    } catch (err) {
+      console.error('❌ Error fetching data:', err);
+      setError(err.message || 'Gagal memuat data dari server');
+      setRetryCount(prev => prev + 1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const useDemoData = () => {
+    setMenuData(demoData);
+    setUsingDemo(true);
+    setError(null);
+    setLoading(false);
+    console.log('🎯 Using demo data');
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('🔄 Fetching data from backend...');
-        
-        // Try multiple endpoints
-        const endpoints = [
-          { url: '/api/menu', name: 'nginx_proxy' },
-          { url: 'http://localhost:5001/menu', name: 'direct_backend' }
-        ];
-        
-        let success = false;
-        
-        for (const endpoint of endpoints) {
-          try {
-            console.log(`🔍 Trying: ${endpoint.url}`);
-            const response = await fetch(endpoint.url);
-            
-            if (response.ok) {
-              const data = await response.json();
-              if (data.success) {
-                setMenuData(data.data);
-                setApiSource(`${endpoint.name} (${data.source})`);
-                console.log(`✅ Success with: ${endpoint.url}`);
-                success = true;
-                break;
-              }
-            }
-          } catch (err) {
-            console.log(`❌ Failed ${endpoint.url}:`, err.message);
-          }
-        }
-        
-        if (!success) {
-          throw new Error('Unable to connect to backend');
-        }
-        
-      } catch (err) {
-        console.error('Error:', err);
-        setError(err.message);
-        
-        // Fallback data
-        setTimeout(() => {
-          setMenuData([
-            {
-              id: 1,
-              nama: 'Jadwalkan Perjalanan',
-              link: '#',
-              banner: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80',
-              icon: ''
-            },
-            {
-              id: 2,
-              nama: 'Ustadz/ah Disini',
-              link: '#',
-              banner: 'https://images.unsplash.com/photo-1580477667995-2b94f01c9516?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80',
-              icon: ''
-            },
-            {
-              id: 3,
-              nama: 'Book a Driver',
-              link: '#',
-              banner: 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300&q=80',
-              icon: ''
-            }
-          ]);
-          setApiSource('demo_fallback');
-          setLoading(false);
-        }, 1000);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
   return (
     <div className="app-container">
+      {/* Header */}
       <div className="header">
         <img 
           className="logo" 
           src="https://i.imgur.com/q0lH38R.png" 
           alt="LPI Abata Logo"
+          onError={(e) => {
+            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiMzMzMiLz4KPHN2ZyB4PSIyNSIgeT0iMjUiIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NjYiIHN0cm9rZS13aWR0aD0iMiI+CjxwYXRoIGQ9Ik0xMiAxMk0xMiAxNk0xMiAyME0xMiA4TTEyIDRaIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo=';
+          }}
         />
         <h1>LPI Abata Leaders</h1>
         <h2>Division of Operations — We serve you better.</h2>
         
-        {apiSource && (
-          <div style={{ 
-            background: '#f0f9ff', 
-            border: '1px solid #bae6fd', 
-            borderRadius: '8px', 
-            padding: '8px 12px', 
-            margin: '5px 0',
-            color: '#0369a1',
-            fontSize: '12px'
-          }}>
-            📡 Data source: {apiSource}
-          </div>
-        )}
-        
-        {error && (
-          <div style={{ 
-            background: '#fef2f2', 
-            border: '1px solid #fecaca', 
-            borderRadius: '8px', 
-            padding: '12px', 
-            margin: '10px 0',
-            color: '#dc2626',
-            fontSize: '14px'
-          }}>
-            ⚠️ {error} - Using demo data
+        {/* Status Indicator */}
+        {usingDemo && (
+          <div className="demo-indicator">
+            <span className="demo-badge">Demo Mode</span>
           </div>
         )}
       </div>
 
+      {/* Menu Container */}
       <div className="menu">
         {loading ? (
-          <div className="text-white text-center py-8">Loading...</div>
+          <LoadingSpinner />
+        ) : error ? (
+          <ErrorMessage 
+            message={error} 
+            onRetry={fetchData}
+            onUseDemo={useDemoData}
+          />
         ) : menuData.length > 0 ? (
-          menuData.map((menu) => <MenuCard key={menu.id} menu={menu} />)
+          <>
+            {usingDemo && (
+              <div className="demo-warning">
+                <div className="warning-icon">⚠️</div>
+                <div className="warning-text">
+                  Menggunakan data demo. Pastikan backend berjalan untuk data real.
+                </div>
+              </div>
+            )}
+            {menuData.map((menu) => (
+              <MenuCard key={menu.id} menu={menu} />
+            ))}
+          </>
         ) : (
-          <p className="text-gray-400 text-center py-8">Belum ada menu.</p>
+          <p className="no-menu-text">Belum ada menu.</p>
         )}
       </div>
 
+      {/* Footer */}
       <div className="footer">
-        Copyright © 2025
-        {apiSource && <span style={{color: '#666', marginLeft: '10px'}}>• {apiSource}</span>}
+        Copyright © 2025 LPI Abata
+        {usingDemo && <span className="demo-footer"> • Demo Mode</span>}
       </div>
     </div>
   );
