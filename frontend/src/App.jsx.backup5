@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { menuAPI } from './services/api';
 
-// Komponen Card untuk menampilkan menu dengan dropdown
+// Komponen Card untuk menampilkan menu
 const MenuCard = ({ menu }) => {
   const placeholderSvg = `data:image/svg+xml,${encodeURIComponent(`
     <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700">
@@ -14,34 +14,6 @@ const MenuCard = ({ menu }) => {
   const bannerSrc = menu.banner || placeholderSvg;
   const hasLink = menu.link && menu.link.trim() !== '';
   const hasIcon = menu.icon && menu.icon.trim() !== '';
-  
-  // Tentukan apakah menu ini memiliki dropdown
-  const hasDropdown = menu.nama.toLowerCase().includes('book a driver');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
-  // Data dropdown items
-  const dropdownItems = [
-    {
-      id: 1,
-      nama: 'Admin Login',
-      link: 'https://script.google.com/a/abata.sch.id/macros/s/AKfycbwd0Zrt7UBoy8qpiBNoDscCZ9YCKnbuzusx5FPCyyLcfNk44DJA9CV1LeGHyEPLmS50tg/exec?page=Admin', // GANTI_DENGAN_LINK_ADMIN_LOGIN
-	newTab: true,
-    },
-    {
-      id: 2, 
-      nama: 'Lihat Kalender Driver',
-      link: 'https://calendar.google.com/calendar/embed?height=600&wkst=1&ctz=Asia%2FJakarta&showPrint=0&showTz=0&mode=WEEK&title=Drivers%20Booking%20Form%20LPI%20Abata%20Leaderss&showCalendars=0&src=Y18xZjFiNzg0Yjg3NmM0OGY4Y2I1Y2VkYzliZDdiMDNlNTYzYWZjZTM4MjBhODkzMjhkNjYzNWQ4MTY1MTYxOGI5QGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20&src=Y185ZjMxNTAxZmRhZTkyZWJmZTM1MzI0MjE5NDI3ODdlMGZmZjM3MDI3YzJjMmUxYzY1ODk4ZTA2YzgzNWUwYmNkQGdyb3VwLmNhbGVuZGFyLmdvb2dsZS5jb20&color=%23ad1457&color=%234285f4', // GANTI_DENGAN_LINK_KALENDER_DRIVER  
-	newTab: false,
-    }
-  ];
-
-  const toggleDropdown = (e) => {
-    if (hasDropdown) {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDropdownOpen(!isDropdownOpen);
-    }
-  };
 
   const CardContent = () => (
     <div className="card">
@@ -52,6 +24,10 @@ const MenuCard = ({ menu }) => {
           alt={`Banner ${menu.nama}`}
           onError={(e) => {
             e.target.src = placeholderSvg;
+          }}
+          style={{
+            objectFit: 'cover',
+            objectPosition: 'center'
           }}
         />
       </div>
@@ -69,53 +45,10 @@ const MenuCard = ({ menu }) => {
             />
           </div>
         )}
-        <div className="footer-title">
-          {menu.nama}
-          {hasDropdown && (
-            <button 
-              className="dropdown-toggle"
-              onClick={toggleDropdown}
-            >
-              {isDropdownOpen ? '▲' : '▼'}
-            </button>
-          )}
-        </div>
+        <div className="footer-title">{menu.nama}</div>
       </div>
-
-      {/* Dropdown Content */}
-      {hasDropdown && isDropdownOpen && (
-        <div className="dropdown-content">
-          {dropdownItems.map((item) => (
-	            <a
-	  key={item.id}
-	  href={item.link}
-	  {...(item.newTab ? {
-	    target: "_blank",
-	    rel: "noopener noreferrer"
-	  } : {})}
-	  className="dropdown-item"
-	>
-
-              <div className="dropdown-item-title">{item.nama}</div>
-            </a>
-          ))}
-        </div>
-      )}
     </div>
   );
-
-  if (hasDropdown) {
-    return (
-      <a 
-        className="card-link" 
-        href={menu.link} 
-        target="_blank" 
-        rel="noopener noreferrer"
-      >
-        <CardContent />
-      </a>
-    );
-  }
 
   if (hasLink) {
     return (
@@ -242,7 +175,7 @@ function App() {
           src="https://i.imgur.com/q0lH38R.png" 
           alt="LPI Abata Logo"
           onError={(e) => {
-            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiMzMzMiLz4KPC9zdmc+';
+            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIiByeD0iNTAiIGZpbGw9IiMzMzMiLz4KPHN2ZyB4PSIyNSIgeT0iMjUiIHdpZHRoPSI1MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM2NjYiIHN0cm9rZS13aWR0aD0iMiI+CjxwYXRoIGQ9Ik0xMiAxMk0xMiAxNk0xMiAyME0xMiA4TTEyIDRaIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KPC9zdmc+Cjwvc3ZnPgo=';
           }}
         />
         <h1>LPI Abata Leaders</h1>
